@@ -15,12 +15,23 @@ function cleanup(string $data){
 
 }
 
+function uploadFile($file, $allowed_types = [], &$error_message = ''){
+    $target_dir = 'uploads/';
+    $target_file = $target_dir . rand() . basename($file['name']);
+    $file_extension = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+
+    if (count($allowed_types) < 1 || in_array($file_extension, $allowed_types)) {
+    move_uploaded_file($file['tmp_name'], $target_file);
+    }else{
+        $error_message = "we only allow" . implode(', ', $allowed_types);
+    }
+}
+
 function checkEmpty($data, &$error_str){
     if(empty($data)){
         $error_str = "This input is empty!";
 
     }
-
 
 }
 
@@ -37,7 +48,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = cleanup ($_POST['name']);
     $email = cleanup ($_POST['email']);
     $password = cleanup ($_POST['password']);
-    print_r($_FILES);
+    
 
     //Check if name is empty
     checkEmpty($name, $name_error);
@@ -56,7 +67,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $password_error = "Password cannot be less than 6";
     }
 
-    if(empty($password_error) && empty($email_error) && empty($name_error)){
+    if (empty($_FILES['image'] && !empty($_FILES['image']))) {
+        uploadFile($_FILES['image'], ['png', 'jpg', 'jpeg', 'gif'], $image_error);
+    } else {
+        $image_error = "the image is required";
+    }
+
+    if(empty($password_error) && empty($email_error) && empty($name_error) && empty($image_error)){
+
         $_SESSION['name'] = $name;
         $_SESSION['email'] = $email;
         $_SESSION['password'] = $password;
@@ -65,21 +83,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-
-
-
-
-
-
-
 ?>
-
-
-
-
-
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -105,23 +109,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         <br><br>
         <label for="image">Upload Profile Picture</label><br>
         <input type="file" name="image" id="image">
+        <?php  echo isset($image_error) && !empty($image_error) ? displayError($image_error): '';?>
         <br><br>
         <input type="submit" value="Register">
     
     </form>
-
-
-
-
-
-
-
-
-
-
-
-
-
     
 </body>
 </html>
